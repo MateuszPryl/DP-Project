@@ -7,8 +7,21 @@
 
 
 
+
+
+
+
 /*
-    # Section 2  
+    # Section 2
+    Tables population
+*/
+
+
+
+
+
+/*
+    # Section 3  
     Functions declarations
 */
 
@@ -17,7 +30,7 @@
 
 
 /*
-    # Section 3
+    # Section 4
     Procedures declarations
 */
 
@@ -26,7 +39,7 @@
 
 
 /*
-    # Section 4
+    # Section 5
     Triggers declarations
 */
 
