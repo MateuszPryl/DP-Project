@@ -208,7 +208,125 @@ SELECT 301, 3, 4, 'Presidential Suite', 350 FROM DUAL;
     Procedures declarations
 */
 
+--Add Guest procedure
 
+create or replace PROCEDURE add_guest(
+    guest_id_p in NUMBER,
+    guest_name_p in VARCHAR2,
+    guest_surname_p in VARCHAR2,
+    guest_sec_num_p in VARCHAR2,
+    guest_date_of_birth_p in DATE,
+    guest_address_p in VARCHAR2,
+    guest_age_p in NUMBER,
+    guest_email_p in VARCHAR
+)IS
+BEGIN
+    INSERT INTO guests (
+    guest_id,
+    name,
+    surname,
+    security_number,
+    date_of_birth,
+    address,
+    age,
+    email
+    ) VALUES (
+    guest_id_p,
+    guest_name_p,
+    guest_surname_p,
+    guest_sec_num_p,
+    guest_date_of_birth_p,
+    guest_address_p,
+    guest_age_p,
+    guest_email_p
+    );
+
+    COMMIT;
+
+    DBMS_OUTPUT.PUT_LINE('New customer added');
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+        ROLLBACK;
+END add_guest;
+
+-- Add employee procedure
+
+create or replace PROCEDURE add_employee(
+    employee_id_p IN NUMBER,
+    name_p IN VARCHAR2,
+    surname_p IN VARCHAR2,
+    date_of_birth_p IN DATE,
+    date_of_hiring_p IN DATE,
+    job_id_p IN NUMBER,
+    salary_p IN NUMBER
+) IS
+BEGIN
+    INSERT INTO employees (
+        employee_id,
+        name,
+        surname,
+        date_of_birth,
+        date_of_hiring,
+        job_id,
+        salary
+    ) VALUES (
+        employee_id_p,
+        name_p,
+        surname_p,
+        date_of_birth_p,
+        date_of_hiring_p,
+        job_id_p,
+        salary_p
+    );
+
+    COMMIT;
+
+    DBMS_OUTPUT.PUT_LINE('New employee added');
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+        ROLLBACK;
+END add_employee;
+
+
+-- Delete gueste procedure
+
+create or replace PROCEDURE delete_guest(
+    guest_id_p IN NUMBER
+) IS
+BEGIN
+    DELETE FROM guests
+    WHERE guest_id = guest_id_p;
+
+    COMMIT;
+
+    DBMS_OUTPUT.PUT_LINE('Guest deleted');
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+        ROLLBACK;
+END delete_guest;
+
+-- Delete employee procedure
+
+create or replace PROCEDURE delete_employee(
+    employee_id_p IN NUMBER
+) IS
+BEGIN
+    DELETE FROM employees
+    WHERE employee_id = employee_id_p;
+
+    COMMIT;
+
+    DBMS_OUTPUT.PUT_LINE('Employee deleted');
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Employee not found');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+        ROLLBACK;
+END delete_employee;
 
 
 
