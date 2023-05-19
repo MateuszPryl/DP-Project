@@ -393,6 +393,59 @@ EXCEPTION
         ROLLBACK;
 END cancel_booking;
 
+-- Add booking review procedure
+
+create or replace PROCEDURE add_booking_review(
+    booking_id_p IN bookings_history.booking_id%TYPE,
+    review_p IN bookings_history.review%TYPE
+)
+IS
+    guest_id_v bookings_history.guest_id%TYPE;
+    room_id_v bookings_history.room_id%TYPE;
+    start_date_v bookings_history.start_date%TYPE;
+    end_date_v bookings_history.end_date%TYPE;
+    responsible_employee_id_v bookings_history.responsible_employee_id%TYPE;
+    total_price_v bookings_history.total_price%TYPE;
+    payment_type_v bookings_history.payment_type%TYPE;
+BEGIN
+    SELECT guest_id, room_id, start_date, end_date, responsible_employee_id, total_price, payment_type
+    INTO guest_id_v, room_id_v, start_date_v, end_date_v, responsible_employee_id_v, total_price_v, payment_type_v
+    FROM bookings_history
+    WHERE booking_id = booking_id_p;
+
+    INSERT INTO bookings_history (
+        booking_id,
+        guest_id,
+        room_id,
+        start_date,
+        end_date,
+        responsible_employee_id,
+        total_price,
+        payment_type,
+        review
+    ) VALUES (
+        booking_id_p,
+        guest_id_v,
+        room_id_v,
+        start_date_v,
+        end_date_v,
+        responsible_employee_id_v,
+        total_price_v,
+        payment_type_v,
+        review_p
+    );
+
+    COMMIT;
+
+    DBMS_OUTPUT.PUT_LINE('New review added');
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Booking ID ' || booking_id_p || ' not found');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+        ROLLBACK;
+END add_booking_review;
+
 
 
 
