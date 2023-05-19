@@ -210,40 +210,41 @@ SELECT 301, 3, 4, 'Presidential Suite', 350 FROM DUAL;
 
 --Add Guest procedure
 
-create or replace PROCEDURE add_guest(
-    guest_id_p in NUMBER,
-    guest_name_p in VARCHAR2,
-    guest_surname_p in VARCHAR2,
-    guest_sec_num_p in VARCHAR2,
-    guest_date_of_birth_p in DATE,
-    guest_address_p in VARCHAR2,
-    guest_age_p in NUMBER,
-    guest_email_p in VARCHAR
-)IS
+CREATE OR REPLACE PROCEDURE add_guest(
+    guest_id_p IN guests.guest_id%TYPE,
+    name_p IN guests.name%TYPE,
+    surname_p IN guests.surname%TYPE,
+    security_number_p IN guests.security_number%TYPE,
+    date_of_birth_p IN guests.date_of_birth%TYPE,
+    address_p IN guests.address%TYPE,
+    age_p IN guests.age%TYPE,
+    email_p IN guests.email%TYPE
+)
+IS
 BEGIN
     INSERT INTO guests (
-    guest_id,
-    name,
-    surname,
-    security_number,
-    date_of_birth,
-    address,
-    age,
-    email
+        guest_id,
+        name,
+        surname,
+        security_number,
+        date_of_birth,
+        address,
+        age,
+        email
     ) VALUES (
-    guest_id_p,
-    guest_name_p,
-    guest_surname_p,
-    guest_sec_num_p,
-    guest_date_of_birth_p,
-    guest_address_p,
-    guest_age_p,
-    guest_email_p
+        guest_id_p,
+        name_p,
+        surname_p,
+        security_number_p,
+        date_of_birth_p,
+        address_p,
+        age_p,
+        email_p
     );
 
     COMMIT;
 
-    DBMS_OUTPUT.PUT_LINE('New customer added');
+    DBMS_OUTPUT.PUT_LINE('New guest added');
 EXCEPTION
     WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
@@ -252,15 +253,16 @@ END add_guest;
 
 -- Add employee procedure
 
-create or replace PROCEDURE add_employee(
-    employee_id_p IN NUMBER,
-    name_p IN VARCHAR2,
-    surname_p IN VARCHAR2,
-    date_of_birth_p IN DATE,
-    date_of_hiring_p IN DATE,
-    job_id_p IN NUMBER,
-    salary_p IN NUMBER
-) IS
+CREATE OR REPLACE PROCEDURE add_employee(
+    employee_id_p IN employees.employee_id%TYPE,
+    name_p IN employees.name%TYPE,
+    surname_p IN employees.surname%TYPE,
+    date_of_birth_p IN employees.date_of_birth%TYPE,
+    date_of_hiring_p IN employees.date_of_hiring%TYPE,
+    job_id_p IN employees.job_id%TYPE,
+    salary_p IN employees.salary%TYPE
+)
+IS
 BEGIN
     INSERT INTO employees (
         employee_id,
@@ -290,10 +292,10 @@ EXCEPTION
 END add_employee;
 
 
--- Delete gueste procedure
+-- Delete guest procedure
 
 create or replace PROCEDURE delete_guest(
-    guest_id_p IN NUMBER
+    guest_id_p IN guests.guest_id%TYPE
 ) IS
 BEGIN
     DELETE FROM guests
@@ -311,7 +313,7 @@ END delete_guest;
 -- Delete employee procedure
 
 create or replace PROCEDURE delete_employee(
-    employee_id_p IN NUMBER
+    employee_id_p IN employees.employee_id%TYPE
 ) IS
 BEGIN
     DELETE FROM employees
@@ -327,6 +329,70 @@ EXCEPTION
         DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
         ROLLBACK;
 END delete_employee;
+
+-- Add booking procedure
+
+create or replace PROCEDURE add_booking(
+    booking_id_p IN bookings.booking_id%TYPE,
+    guest_id_p IN bookings.guest_id%TYPE,
+    room_id_p IN bookings.room_id%TYPE,
+    start_date_p in bookings.start_date%TYPE,
+    end_date_p in bookings.end_date%TYPE,
+    responsible_employee_id_p in bookings.responsible_employee_id%TYPE,
+    total_price_p in bookings.total_price%TYPE,
+    payment_type_p in bookings.payment_type%TYPE
+) 
+IS
+BEGIN
+    INSERT INTO bookings (
+        booking_id,
+        guest_id,
+        room_id,
+        start_date,
+        end_date,
+        responsible_employee_id,
+        total_price,
+        payment_type
+    ) VALUES (
+        booking_id_p,
+        guest_id_p,
+        room_id_p,
+        start_date_p,
+        end_date_p,
+        responsible_employee_id_p,
+        total_price_p,
+        payment_type_p
+    );
+
+    COMMIT;
+
+    DBMS_OUTPUT.PUT_LINE('New booking added');
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+        ROLLBACK;
+END add_booking;
+
+-- Cancel booking procedure
+
+CREATE OR REPLACE PROCEDURE cancel_booking(
+    booking_id_p IN bookings.booking_id%TYPE
+) IS
+BEGIN
+    DELETE FROM bookings
+    WHERE booking_id = booking_id_p;
+    
+    COMMIT;
+    
+    DBMS_OUTPUT.PUT_LINE('Booking canceled');
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Booking not found');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+        ROLLBACK;
+END cancel_booking;
+
 
 
 
