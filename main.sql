@@ -333,19 +333,23 @@ END delete_employee;
 -- Add booking procedure
 
 create or replace PROCEDURE add_booking(
-    booking_id_p IN bookings.booking_id%TYPE,
     guest_id_p IN bookings.guest_id%TYPE,
     room_id_p IN bookings.room_id%TYPE,
     start_date_p in bookings.start_date%TYPE,
     end_date_p in bookings.end_date%TYPE,
     responsible_employee_id_p in bookings.responsible_employee_id%TYPE,
-    total_price_p in bookings.total_price%TYPE,
     payment_type_p in bookings.payment_type%TYPE
 ) 
 IS
+    num_of_days NUMBER;
+    room_price rooms.price_per_day%TYPE;
+    total_price_calculated NUMBER;
 BEGIN
+    num_of_days := end_date_p - start_date_p;
+    SELECT price_per_day INTO room_price FROM rooms WHERE room_id = room_id_p;
+    total_price_calculated := num_of_days * room_price;
+    
     INSERT INTO bookings (
-        booking_id,
         guest_id,
         room_id,
         start_date,
@@ -354,17 +358,16 @@ BEGIN
         total_price,
         payment_type
     ) VALUES (
-        booking_id_p,
         guest_id_p,
         room_id_p,
         start_date_p,
         end_date_p,
         responsible_employee_id_p,
-        total_price_p,
+        total_price_calculated,
         payment_type_p
     );
 
-    COMMIT;
+--    COMMIT;
 
     DBMS_OUTPUT.PUT_LINE('New booking added');
 EXCEPTION
@@ -446,6 +449,19 @@ EXCEPTION
         ROLLBACK;
 END add_booking_review;
 
+-- Moving expired bookings to bookings_history table
+CREATE OR REPLACE PROCEDURE daily_bookings_check IS
+BEGIN
+
+  INSERT INTO bookings_history (booking_id, guest_id, room_id, start_date, end_date, responsible_employee_id, total_price, payment_type, review)
+    SELECT booking_id, guest_id, room_id, start_date, end_date, responsible_employee_id, total_price, payment_type, ''
+    FROM bookings
+    WHERE end_date < TRUNC(SYSDATE);
+
+  DELETE FROM bookings
+  WHERE end_date < TRUNC(SYSDATE);
+
+END;
 
 
 
@@ -454,6 +470,41 @@ END add_booking_review;
     Triggers declarations
 */
 
+-- Auto id increment for bookings table
+CREATE OR REPLACE TRIGGER bookings_trigger
+BEFORE INSERT ON bookings
+FOR EACH ROW
+BEGIN
+  :NEW.booking_id := bookings_seq.NEXTVAL;
+END;
+
+
+/*
+    # Section 6
+    Sequences declarations
+*/
+
+CREATE SEQUENCE bookings_seq START WITH 1 INCREMENT BY 1;
+
+/*
+    # Section 7
+    Other
+*/
+
+BEGIN
+  DBMS_SCHEDULER.CREATE_JOB(
+    job_name        => 'daily_bookings_scheduler',
+    job_type        => 'PLSQL_BLOCK',
+    job_action      => 'BEGIN daily_bookings_check; END;',
+    start_date      => TRUNC(SYSDATE) + INTERVAL '1' DAY + INTERVAL '8' HOUR,
+    repeat_interval => 'FREQ=DAILY; BYHOUR=8',
+    enabled         => TRUE
+  );
+END;
+
+-- BEGIN
+--   DBMS_SCHEDULER.DROP_JOB('daily_task_job');
+-- END;
 
 
 
