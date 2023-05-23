@@ -547,11 +547,37 @@ BEGIN
   WHERE end_date < TRUNC(SYSDATE);
 
 END;
+/*
+    # Section 6
+    Functions declarations
+*/
 
+create or replace FUNCTION calculate_total_revenue(payment_type IN VARCHAR2)
+RETURN NUMBER
+IS
+    total_revenue NUMBER(10, 2);
+BEGIN
+    SELECT SUM(total_price) INTO total_revenue
+    FROM Bookings
+    WHERE payment_type = payment_type;
+
+    DBMS_OUTPUT.PUT_LINE('Total Revenue: ' || total_revenue);
+    RETURN total_revenue;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('No revenue found.');
+        RETURN 0; 
+END;
+
+DECLARE
+    total_rev NUMBER(10, 2);
+BEGIN
+    total_rev := calculate_total_revenue('Credit Card'); -- Replace 'Credit Card' with the desired payment type
+END;
 
 
 /*
-    # Section 6
+    # Section 7
     Triggers declarations
 */
 
@@ -565,14 +591,14 @@ END;
 
 
 /*
-    # Section 7
+    # Section 8
     Sequences declarations
 */
 
 CREATE SEQUENCE bookings_seq START WITH 1 INCREMENT BY 1;
 
 /*
-    # Section 8
+    # Section 9
     Other
 */
 
