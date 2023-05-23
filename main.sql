@@ -551,6 +551,7 @@ END;
     # Section 6
     Functions declarations
 */
+-- Total revenue from given payment method
 
 create or replace FUNCTION calculate_total_revenue(payment_type IN VARCHAR2)
 RETURN NUMBER
@@ -575,6 +576,44 @@ BEGIN
     total_rev := calculate_total_revenue('Credit Card'); -- Replace 'Credit Card' with the desired payment type
 END;
 
+-- Check if room is available in given date
+
+create or replace FUNCTION is_room_available(
+    room_id_p IN NUMBER,
+    check_date_p IN DATE
+) RETURN BOOLEAN
+IS
+    v_count NUMBER;
+BEGIN
+    SELECT COUNT(*) INTO v_count
+    FROM bookings
+    WHERE room_id = room_id_p
+        AND check_date_p BETWEEN start_date AND end_date;
+
+    IF v_count > 0 THEN
+        RETURN FALSE; 
+    ELSE
+        RETURN TRUE; 
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN FALSE; 
+END;
+
+DECLARE
+    v_room_id NUMBER := 103; -- Replace with the desired room ID
+    v_check_date DATE := DATE '2023-05-21'; -- Replace with the desired check date
+    v_available BOOLEAN;
+BEGIN
+    v_available := is_room_available(v_room_id, v_check_date);
+
+    IF v_available THEN
+        DBMS_OUTPUT.PUT_LINE('Room ' || v_room_id || ' is available on ' || v_check_date);
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Room ' || v_room_id || ' is not available on ' || v_check_date);
+    END IF;
+END;
+
 
 /*
     # Section 7
@@ -589,7 +628,7 @@ BEGIN
   :NEW.booking_id := bookings_seq.NEXTVAL;
 END;
 
--- Mve deleted employee to the employees_history table
+-- Move deleted employee to the employees_history table
 
 create or replace TRIGGER employees_delete_trigger
 AFTER DELETE ON employees
