@@ -589,6 +589,33 @@ BEGIN
   :NEW.booking_id := bookings_seq.NEXTVAL;
 END;
 
+-- Mve deleted employee to the employees_history table
+
+create or replace TRIGGER employees_delete_trigger
+AFTER DELETE ON employees
+FOR EACH ROW
+BEGIN
+    INSERT INTO Employees_history (
+        employee_id,
+        name,
+        surname,
+        date_of_birth,
+        date_of_hiring,
+        job_id,
+        salary,
+        fired_date
+    )
+    VALUES (
+        :OLD.employee_id,
+        :OLD.name,
+        :OLD.surname,
+        :OLD.date_of_birth,
+        :OLD.date_of_hiring,
+        :OLD.job_id,
+        :OLD.salary,
+        SYSDATE
+    );
+END;
 
 /*
     # Section 8
