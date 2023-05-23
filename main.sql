@@ -194,17 +194,68 @@ SELECT 303, 3, 4, 'Family Suite Sea View', 125 FROM DUAL
 UNION ALL
 SELECT 301, 3, 4, 'Presidential Suite', 350 FROM DUAL;
 
+INSERT INTO Employees_history (employee_id, name, surname, date_of_birth, date_of_hiring, job_id, salary, fired_date)
+VALUES (10, 'Adam', 'Nowak', TO_DATE('1985-05-10', 'YYYY-MM-DD'), TO_DATE('2010-01-15', 'YYYY-MM-DD'), 1, 50000.00, NULL);
+
+INSERT INTO Employees_history (employee_id, name, surname, date_of_birth, date_of_hiring, job_id, salary, fired_date)
+VALUES (11, 'Katarzyna', 'Kowalska', TO_DATE('1992-09-20', 'YYYY-MM-DD'), TO_DATE('2015-07-03', 'YYYY-MM-DD'), 2, 45000.00, NULL);
+
+INSERT INTO Employees_history (employee_id, name, surname, date_of_birth, date_of_hiring, job_id, salary, fired_date)
+VALUES (12, 'Piotr', 'Jankowski', TO_DATE('1988-12-05', 'YYYY-MM-DD'), TO_DATE('2012-04-28', 'YYYY-MM-DD'), 3, 75500.00, NULL);
+
+INSERT INTO Employees_history (employee_id, name, surname, date_of_birth, date_of_hiring, job_id, salary, fired_date)
+VALUES (13, 'Anna', 'Wójcik', TO_DATE('1991-06-15', 'YYYY-MM-DD'), TO_DATE('2018-02-10', 'YYYY-MM-DD'), 4, 48000.00, NULL);
+
+INSERT INTO Employees_history (employee_id, name, surname, date_of_birth, date_of_hiring, job_id, salary, fired_date)
+VALUES (14, 'Tomasz', 'Kamiński', TO_DATE('1987-03-25', 'YYYY-MM-DD'), TO_DATE('2013-09-05', 'YYYY-MM-DD'), 5, 45200.00, NULL);
+
 /*
     # Section 3  
     Functions declarations
 */
 
+/*
+    # Section 4 
+    Data queries
+*/
 
+SELECT COUNT(*) AS total_bookings
+FROM bookings;
 
+SELECT AVG(total_price) AS average_price
+FROM bookings;
+
+SELECT AVG(end_date - start_date) AS average_duration
+FROM bookings;
+
+SELECT responsible_employee, COUNT(*) AS booking_count, SUM(total_price) AS total_price
+FROM bookings
+GROUP BY responsible_employee
+ORDER BY booking_count DESC
+FETCH FIRST 1 ROWS ONLY;
+
+SELECT AVG(EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM date_of_birth)) AS average_age
+FROM employees;
+
+SELECT COUNT(*) AS Number_Of_Employees_In_History
+FROM employees_history
+
+SELECT MAX(total_price) AS max_total_price
+FROM Bookings;
+
+SELECT SUM(total_price) AS total_price_sum
+FROM Bookings;
+
+SELECT AVG(total_price) AS average_total_price
+FROM Bookings;
+
+SELECT responsible_employee_id, COUNT(*) AS booking_count
+FROM Bookings
+GROUP BY responsible_employee_id;
 
 
 /*
-    # Section 4
+    # Section 5
     Procedures declarations
 */
 
@@ -466,7 +517,7 @@ END;
 
 
 /*
-    # Section 5
+    # Section 6
     Triggers declarations
 */
 
@@ -480,14 +531,14 @@ END;
 
 
 /*
-    # Section 6
+    # Section 7
     Sequences declarations
 */
 
 CREATE SEQUENCE bookings_seq START WITH 1 INCREMENT BY 1;
 
 /*
-    # Section 7
+    # Section 8
     Other
 */
 
