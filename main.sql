@@ -214,6 +214,51 @@ VALUES (14, 'Tomasz', 'Kamiński', TO_DATE('1987-03-25', 'YYYY-MM-DD'), TO_DATE(
     Functions declarations
 */
 
+create or replace FUNCTION give_salary_raise(p_employee_id IN employees.employee_id%TYPE,
+                p_raise_percent IN NUMBER)
+  RETURN NUMBER
+IS
+    v_current_salary NUMBER;
+    v_new_salary NUMBER;
+BEGIN
+    SELECT salary INTO v_current_salary
+    FROM employees
+    WHERE employee_id = p_employee_id;
+
+    v_new_salary := v_current_salary * (1 + p_raise_percent/100);
+
+    UPDATE employees
+    SET salary = v_new_salary
+    WHERE employee_id = p_employee_id;
+
+    RETURN v_new_salary;
+EXCEPTION
+  WHEN NO_DATA_FOUND THEN
+    DBMS_OUTPUT.PUT_LINE('Employee with this id not found');
+    RETURN -1;
+  WHEN OTHERS THEN
+    DBMS_OUTPUT.PUT_LINE('Error when trying to change salary');
+    RETURN -1;
+END;
+
+-- Returnig guest data who is in a particular room at a particular date
+create or replace FUNCTION calculate_total_revenue(payment_type IN VARCHAR2)
+RETURN NUMBER
+IS
+    total_revenue NUMBER(10, 2);
+BEGIN
+    SELECT SUM(total_price) INTO total_revenue
+    FROM Bookings
+    WHERE payment_type = payment_type;
+
+    DBMS_OUTPUT.PUT_LINE('Total Revenue: ' || total_revenue);
+    RETURN total_revenue;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('No revenue found.');
+        RETURN 0; 
+END calculate_total_revenue;
+
 /*
     # Section 4 
     Data queries
@@ -546,11 +591,13 @@ BEGIN
   DELETE FROM bookings
   WHERE end_date < TRUNC(SYSDATE);
 
-END;
+END daily_bookings_check;
+
 /*
     # Section 6
     Functions declarations
 */
+
 -- Total revenue from given payment method
 
 create or replace FUNCTION calculate_total_revenue(payment_type IN VARCHAR2)
@@ -577,7 +624,6 @@ BEGIN
 END;
 
 -- Check if room is available in given date
-
 create or replace FUNCTION is_room_available(
     room_id_p IN NUMBER,
     check_date_p IN DATE
@@ -628,8 +674,8 @@ BEGIN
   :NEW.booking_id := bookings_seq.NEXTVAL;
 END;
 
--- Move deleted employee to the employees_history table
 
+-- Move deleted employee to the employees_history table
 create or replace TRIGGER employees_delete_trigger
 AFTER DELETE ON employees
 FOR EACH ROW
@@ -655,6 +701,28 @@ BEGIN
         SYSDATE
     );
 END;
+
+-- verify that salary of an employee fits within boundaries given by jobs table 
+create or replace TRIGGER check_salary_change
+BEFORE INSERT OR UPDATE ON employees
+FOR EACH ROW
+DECLARE
+  v_max_salary NUMBER;
+  v_min_salary NUMBER;
+BEGIN
+  SELECT salary_max, salary_min INTO v_max_salary, v_min_salary
+    FROM jobs
+    WHERE job_id = :NEW.job_id;
+    
+    IF :NEW.salary > v_max_salary THEN
+        :NEW.salary := v_min_salary;
+    END IF;
+    
+    IF :NEW.salary < v_min_salary THEN
+        :NEW.salary := v_min_salary;
+    END IF;
+END;
+
 
 /*
     # Section 8
