@@ -253,6 +253,40 @@ SELECT responsible_employee_id, COUNT(*) AS booking_count
 FROM Bookings
 GROUP BY responsible_employee_id;
 
+SELECT MAX(total_price) AS max_total_price
+FROM bookings_history;
+
+SELECT MAX(price_per_day) AS max_price
+FROM Rooms;
+
+SELECT COUNT(*) AS total_rooms
+FROM Rooms;
+
+SELECT AVG(price_per_day) AS average_price
+FROM Rooms;
+
+SELECT *
+FROM Rooms
+ORDER BY floor ASC;
+
+SELECT CASE
+         WHEN age < 18 THEN 'Under 18'
+         WHEN age >= 18 AND age <= 30 THEN '18-30'
+         WHEN age >= 31 AND age <= 50 THEN '31-50'
+         ELSE 'Over 50'
+       END AS age_group,
+       COUNT(*) AS guest_count
+FROM Guests
+GROUP BY CASE
+           WHEN age < 18 THEN 'Under 18'
+           WHEN age >= 18 AND age <= 30 THEN '18-30'
+           WHEN age >= 31 AND age <= 50 THEN '31-50'
+           ELSE 'Over 50'
+         END;
+         
+SELECT *
+FROM Guests
+WHERE age = (SELECT MAX(age) FROM Guests);         
 
 /*
     # Section 5
