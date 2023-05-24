@@ -242,7 +242,7 @@ EXCEPTION
 END;
 
 -- Returnig guest data who is in a particular room at a particular date
-create or replace FUNCTION calculate_total_revenue(payment_type IN VARCHAR2)
+create or replace FUNCTION calculate_total_revenue_from_payment_type(payment_type IN VARCHAR2)
 RETURN NUMBER
 IS
     total_revenue NUMBER(10, 2);
@@ -257,7 +257,7 @@ EXCEPTION
     WHEN NO_DATA_FOUND THEN
         DBMS_OUTPUT.PUT_LINE('No revenue found.');
         RETURN 0; 
-END calculate_total_revenue;
+END calculate_total_revenue_from_payment_type;
 
 /*
     # Section 4 
@@ -462,40 +462,56 @@ END delete_employee;
 
 -- Add booking procedure
 
-create or replace PROCEDURE add_booking(
-    guest_id_p IN bookings.guest_id%TYPE,
-    room_id_p IN bookings.room_id%TYPE,
-    start_date_p in bookings.start_date%TYPE,
-    end_date_p in bookings.end_date%TYPE,
-    responsible_employee_id_p in bookings.responsible_employee_id%TYPE,
-    payment_type_p in bookings.payment_type%TYPE
+CREATE OR REPLACE PROCEDURE add_booking(
+  guest_id_p IN bookings.guest_id%TYPE,
+  room_id_p IN bookings.room_id%TYPE,
+  start_date_p IN bookings.start_date%TYPE,
+  end_date_p IN bookings.end_date%TYPE,
+  responsible_employee_id_p IN bookings.responsible_employee_id%TYPE,
+  payment_type_p IN bookings.payment_type%TYPE
 ) 
 IS
-    num_of_days NUMBER;
-    room_price rooms.price_per_day%TYPE;
-    total_price_calculated NUMBER;
+  num_of_days NUMBER;
+  room_price rooms.price_per_day%TYPE;
+  total_price_calculated NUMBER;
+  room_available BOOLEAN;
 BEGIN
+  room_available := is_room_available(room_id_p, start_date_p, end_date_p);
+  
+  IF room_available THEN
+    -- Calculate the number of days and total price
     num_of_days := end_date_p - start_date_p;
     SELECT price_per_day INTO room_price FROM rooms WHERE room_id = room_id_p;
     total_price_calculated := num_of_days * room_price;
-    
+
     INSERT INTO bookings (
-        guest_id,
-        room_id,
-        start_date,
-        end_date,
-        responsible_employee_id,
-        total_price,
-        payment_type
+      guest_id,
+      room_id,
+      start_date,
+      end_date,
+      responsible_employee_id,
+      total_price,
+      payment_type
     ) VALUES (
-        guest_id_p,
-        room_id_p,
-        start_date_p,
-        end_date_p,
-        responsible_employee_id_p,
-        total_price_calculated,
-        payment_type_p
+      guest_id_p,
+      room_id_p,
+      start_date_p,
+      end_date_p,
+      responsible_employee_id_p,
+      total_price_calculated,
+      payment_type_p
     );
+
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('New booking added');
+  ELSE
+    DBMS_OUTPUT.PUT_LINE('Room is not available within the specified date range. Booking cannot be added.');
+  END IF;
+EXCEPTION
+  WHEN OTHERS THEN
+    DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+    ROLLBACK;
+END add_booking;
 
 --    COMMIT;
 
@@ -593,6 +609,36 @@ BEGIN
 
 END daily_bookings_check;
 
+create or replace PROCEDURE update_booking_dates(
+  p_booking_id IN NUMBER,
+  p_start_date IN DATE,
+  p_end_date IN DATE
+)
+IS
+  v_booking_date bookings.start_date%TYPE;
+BEGIN
+  SELECT start_date INTO v_booking_date
+  FROM bookings
+  WHERE booking_id = p_booking_id;
+
+  -- Check if the booking is within 5 days from today
+  IF v_booking_date - SYSDATE <= 5 THEN
+    DBMS_OUTPUT.PUT_LINE('Cannot update the booking dates. The booking is within 5 days from today.');
+  ELSE
+    UPDATE bookings
+    SET start_date = p_start_date,
+        end_date = p_end_date
+    WHERE booking_id = p_booking_id;
+
+    DBMS_OUTPUT.PUT_LINE('Booking dates updated successfully.');
+  END IF;
+EXCEPTION
+  WHEN NO_DATA_FOUND THEN
+    DBMS_OUTPUT.PUT_LINE('Booking not found.');
+  WHEN OTHERS THEN
+    DBMS_OUTPUT.PUT_LINE('An error occurred while updating the booking dates.');
+END update_booking_dates;
+
 /*
     # Section 6
     Functions declarations
@@ -624,26 +670,28 @@ BEGIN
 END;
 
 -- Check if room is available in given date
-create or replace FUNCTION is_room_available(
-    room_id_p IN NUMBER,
-    check_date_p IN DATE
+CREATE OR REPLACE FUNCTION is_room_available(
+  room_id_p IN NUMBER,
+  start_date_p IN DATE,
+  end_date_p IN DATE
 ) RETURN BOOLEAN
 IS
-    v_count NUMBER;
+  v_count NUMBER;
 BEGIN
-    SELECT COUNT(*) INTO v_count
-    FROM bookings
-    WHERE room_id = room_id_p
-        AND check_date_p BETWEEN start_date AND end_date;
+  SELECT COUNT(*) INTO v_count
+  FROM bookings
+  WHERE room_id = room_id_p
+    AND start_date <= end_date_p
+    AND end_date >= start_date_p;
 
-    IF v_count > 0 THEN
-        RETURN FALSE; 
-    ELSE
-        RETURN TRUE; 
-    END IF;
+  IF v_count > 0 THEN
+    RETURN FALSE; 
+  ELSE
+    RETURN TRUE; 
+  END IF;
 EXCEPTION
-    WHEN OTHERS THEN
-        RETURN FALSE; 
+  WHEN OTHERS THEN
+    RETURN FALSE; 
 END;
 
 DECLARE
@@ -715,7 +763,7 @@ BEGIN
     WHERE job_id = :NEW.job_id;
     
     IF :NEW.salary > v_max_salary THEN
-        :NEW.salary := v_min_salary;
+        :NEW.salary := v_max_salary;
     END IF;
     
     IF :NEW.salary < v_min_salary THEN
