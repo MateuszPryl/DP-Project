@@ -298,6 +298,15 @@ SELECT responsible_employee_id, COUNT(*) AS booking_count
 FROM Bookings
 GROUP BY responsible_employee_id;
 
+SELECT e.employee_id, e.name, e.surname, e.salary, j.job_title
+FROM employees e
+JOIN jobs j ON e.job_id = j.job_id
+WHERE (e.job_id, e.salary) IN (
+  SELECT job_id, MAX(salary)
+  FROM employees
+  GROUP BY job_id
+);
+
 SELECT MAX(total_price) AS max_total_price
 FROM bookings_history;
 
@@ -445,7 +454,26 @@ END delete_guest;
 create or replace PROCEDURE delete_employee(
     employee_id_p IN employees.employee_id%TYPE
 ) IS
+    v_new_employee_id employees.employee_id%TYPE;
 BEGIN
+    -- Check if the employee is assigned to any booking
+    SELECT responsible_employee_id
+    INTO v_new_employee_id
+    FROM bookings
+    WHERE responsible_employee_id = employee_id_p
+    AND ROWNUM = 1;
+
+    -- If the employee is assigned to a booking,
+    -- assign a new employee who are either front desk or managers
+    UPDATE bookings
+    SET responsible_employee_id = (
+        SELECT employee_id
+        FROM employees
+        WHERE job_id IN (1, 3)
+          AND ROWNUM = 1
+    )
+    WHERE responsible_employee_id = employee_id_p;
+
     DELETE FROM employees
     WHERE employee_id = employee_id_p;
 
@@ -459,6 +487,20 @@ EXCEPTION
         DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
         ROLLBACK;
 END delete_employee;
+
+-- code to show it 
+-- BEGIN
+--   add_employee(1001, 'kkla', 'ggdg',DATE '1990-01-01', DATE '2023-01-01', 1, 30000);
+
+--   add_booking(3, 101, DATE '2023-06-01', DATE '2023-06-10', 1001, 'Cash');
+
+--   COMMIT;
+
+-- --  delete_employee(1001);
+
+-- END;
+
+-- SELECT * FROM bookings;
 
 -- Add booking procedure
 
@@ -639,6 +681,40 @@ EXCEPTION
     DBMS_OUTPUT.PUT_LINE('An error occurred while updating the booking dates.');
 END update_booking_dates;
 
+
+-- return data about the highest earning employee
+CREATE OR REPLACE PROCEDURE get_highest_earning_employee(
+  p_employee_id OUT employees.employee_id%TYPE,
+  p_name OUT employees.name%TYPE,
+  p_surname OUT employees.surname%TYPE,
+  p_salary OUT employees.salary%TYPE
+)
+IS
+BEGIN
+  SELECT employee_id, name, surname, salary
+  INTO p_employee_id, p_name, p_surname, p_salary
+  FROM employees
+  WHERE salary = (
+    SELECT MAX(salary)
+    FROM employees
+  );
+END;
+
+-- demonstration
+DECLARE
+  v_employee_id  employees.employee_id%TYPE;
+  v_first_name   employees.first_name%TYPE;
+  v_last_name    employees.last_name%TYPE;
+  v_salary       employees.salary%TYPE;
+BEGIN
+  get_highest_earning_employee(v_employee_id, v_first_name, v_last_name, v_salary);
+  DBMS_OUTPUT.PUT_LINE('Highest Earning Employee:');
+  DBMS_OUTPUT.PUT_LINE('Employee ID: ' || v_employee_id);
+  DBMS_OUTPUT.PUT_LINE('First Name: ' || v_first_name);
+  DBMS_OUTPUT.PUT_LINE('Last Name: ' || v_last_name);
+  DBMS_OUTPUT.PUT_LINE('Salary: ' || v_salary);
+END;
+
 /*
     # Section 6
     Functions declarations
@@ -770,6 +846,43 @@ BEGIN
         :NEW.salary := v_min_salary;
     END IF;
 END;
+
+-- get total lifetime revenue for a specific room
+CREATE OR REPLACE FUNCTION get_room_total_revenue(
+    p_room_id IN rooms.room_id%TYPE
+) RETURN NUMBER
+IS
+    v_total_revenue_now NUMBER := 0;
+    v_total_revenue_history NUMBER := 0;
+    v_total_revenue NUMBER;
+BEGIN
+    -- Calculate the total revenue from the bookings table
+    SELECT COALESCE(SUM(total_price), 0)
+    INTO v_total_revenue_now
+    FROM bookings
+    WHERE room_id = p_room_id;
+
+    -- Calculate the total revenue from the booking_history table
+    SELECT COALESCE(SUM(total_price), 0)
+    INTO v_total_revenue_history
+    FROM bookings_history
+    WHERE room_id = p_room_id;
+
+    v_total_revenue := v_total_revenue_now + v_total_revenue_history;
+
+    RETURN v_total_revenue;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN 0;
+END;
+
+-- demonstartion
+-- DECLARE
+--     v_total_revenue NUMBER;
+-- BEGIN
+--     v_total_revenue := get_room_total_revenue(101);
+--     DBMS_OUTPUT.PUT_LINE('Total Revenue for Room 101: ' || v_total_revenue);
+-- END;
 
 
 /*
