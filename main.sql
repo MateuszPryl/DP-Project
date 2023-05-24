@@ -206,58 +206,9 @@ VALUES (13, 'Anna', 'Wójcik', TO_DATE('1991-06-15', 'YYYY-MM-DD'), TO_DATE('201
 INSERT INTO Employees_history (employee_id, name, surname, date_of_birth, date_of_hiring, job_id, salary, fired_date)
 VALUES (14, 'Tomasz', 'Kamiński', TO_DATE('1987-03-25', 'YYYY-MM-DD'), TO_DATE('2013-09-05', 'YYYY-MM-DD'), 5, 45200.00, NULL);
 
-/*
-    # Section 3  
-    Functions declarations
-*/
-
-create or replace FUNCTION give_salary_raise(p_employee_id IN employees.employee_id%TYPE,
-                p_raise_percent IN NUMBER)
-  RETURN NUMBER
-IS
-    v_current_salary NUMBER;
-    v_new_salary NUMBER;
-BEGIN
-    SELECT salary INTO v_current_salary
-    FROM employees
-    WHERE employee_id = p_employee_id;
-
-    v_new_salary := v_current_salary * (1 + p_raise_percent/100);
-
-    UPDATE employees
-    SET salary = v_new_salary
-    WHERE employee_id = p_employee_id;
-
-    RETURN v_new_salary;
-EXCEPTION
-  WHEN NO_DATA_FOUND THEN
-    DBMS_OUTPUT.PUT_LINE('Employee with this id not found');
-    RETURN -1;
-  WHEN OTHERS THEN
-    DBMS_OUTPUT.PUT_LINE('Error when trying to change salary');
-    RETURN -1;
-END;
-
--- Returnig guest data who is in a particular room at a particular date
-create or replace FUNCTION calculate_total_revenue_from_payment_type(payment_type IN VARCHAR2)
-RETURN NUMBER
-IS
-    total_revenue NUMBER(10, 2);
-BEGIN
-    SELECT SUM(total_price) INTO total_revenue
-    FROM Bookings
-    WHERE payment_type = payment_type;
-
-    DBMS_OUTPUT.PUT_LINE('Total Revenue: ' || total_revenue);
-    RETURN total_revenue;
-EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        DBMS_OUTPUT.PUT_LINE('No revenue found.');
-        RETURN 0; 
-END calculate_total_revenue_from_payment_type;
 
 /*
-    # Section 4 
+    # Section 3 
     Data queries
 */
 
@@ -340,7 +291,7 @@ FROM Guests
 WHERE age = (SELECT MAX(age) FROM Guests);         
 
 /*
-    # Section 5
+    # Section 4
     Procedures declarations
 */
 
@@ -712,12 +663,58 @@ BEGIN
   DBMS_OUTPUT.PUT_LINE('Salary: ' || v_salary);
 END;
 
+
 /*
-    # Section 6
-    Functions declarations
+    # Section 5
+    Function declarations
 */
 
 -- Total revenue from given payment method
+
+create or replace FUNCTION give_salary_raise(p_employee_id IN employees.employee_id%TYPE,
+                p_raise_percent IN NUMBER)
+  RETURN NUMBER
+IS
+    v_current_salary NUMBER;
+    v_new_salary NUMBER;
+BEGIN
+    SELECT salary INTO v_current_salary
+    FROM employees
+    WHERE employee_id = p_employee_id;
+
+    v_new_salary := v_current_salary * (1 + p_raise_percent/100);
+
+    UPDATE employees
+    SET salary = v_new_salary
+    WHERE employee_id = p_employee_id;
+
+    RETURN v_new_salary;
+EXCEPTION
+  WHEN NO_DATA_FOUND THEN
+    DBMS_OUTPUT.PUT_LINE('Employee with this id not found');
+    RETURN -1;
+  WHEN OTHERS THEN
+    DBMS_OUTPUT.PUT_LINE('Error when trying to change salary');
+    RETURN -1;
+END;
+
+-- Returnig guest data who is in a particular room at a particular date
+create or replace FUNCTION calculate_total_revenue_from_payment_type(payment_type IN VARCHAR2)
+RETURN NUMBER
+IS
+    total_revenue NUMBER(10, 2);
+BEGIN
+    SELECT SUM(total_price) INTO total_revenue
+    FROM Bookings
+    WHERE payment_type = payment_type;
+
+    DBMS_OUTPUT.PUT_LINE('Total Revenue: ' || total_revenue);
+    RETURN total_revenue;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('No revenue found.');
+        RETURN 0; 
+END calculate_total_revenue_from_payment_type;
 
 create or replace FUNCTION calculate_total_revenue(payment_type IN VARCHAR2)
 RETURN NUMBER
@@ -736,11 +733,11 @@ EXCEPTION
         RETURN 0; 
 END;
 
-DECLARE
-    total_rev NUMBER(10, 2);
-BEGIN
-    total_rev := calculate_total_revenue('Credit Card'); -- Replace 'Credit Card' with the desired payment type
-END;
+-- DECLARE
+--     total_rev NUMBER(10, 2);
+-- BEGIN
+--     total_rev := calculate_total_revenue('Credit Card'); -- Replace 'Credit Card' with the desired payment type
+-- END;
 
 -- Check if room is available in given date
 CREATE OR REPLACE FUNCTION is_room_available(
@@ -767,19 +764,19 @@ EXCEPTION
     RETURN FALSE; 
 END;
 
-DECLARE
-    v_room_id NUMBER := 103; -- Replace with the desired room ID
-    v_check_date DATE := DATE '2023-05-21'; -- Replace with the desired check date
-    v_available BOOLEAN;
-BEGIN
-    v_available := is_room_available(v_room_id, v_check_date);
+-- DECLARE
+--     v_room_id NUMBER := 103; -- Replace with the desired room ID
+--     v_check_date DATE := DATE '2023-05-21'; -- Replace with the desired check date
+--     v_available BOOLEAN;
+-- BEGIN
+--     v_available := is_room_available(v_room_id, v_check_date);
 
-    IF v_available THEN
-        DBMS_OUTPUT.PUT_LINE('Room ' || v_room_id || ' is available on ' || v_check_date);
-    ELSE
-        DBMS_OUTPUT.PUT_LINE('Room ' || v_room_id || ' is not available on ' || v_check_date);
-    END IF;
-END;
+--     IF v_available THEN
+--         DBMS_OUTPUT.PUT_LINE('Room ' || v_room_id || ' is available on ' || v_check_date);
+--     ELSE
+--         DBMS_OUTPUT.PUT_LINE('Room ' || v_room_id || ' is not available on ' || v_check_date);
+--     END IF;
+-- END;
 
 -- get total lifetime revenue for a specific room
 CREATE OR REPLACE FUNCTION get_room_total_revenue(
