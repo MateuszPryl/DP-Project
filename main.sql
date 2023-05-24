@@ -883,6 +883,13 @@ END;
 --     DBMS_OUTPUT.PUT_LINE('Total Revenue for Room 101: ' || v_total_revenue);
 -- END;
 
+-- trigger for automatic booking numbering
+create or replace TRIGGER bookings_trigger
+BEFORE INSERT ON bookings
+FOR EACH ROW
+BEGIN
+  :NEW.booking_id := bookings_seq.NEXTVAL;
+END;
 
 /*
     # Section 8
