@@ -807,6 +807,29 @@ EXCEPTION
         RETURN 0;
 END;
 
+-- function for getting data about a guest at a specific  time
+create or replace FUNCTION check_room_occupancy(
+  p_room_id IN NUMBER,
+  p_date IN DATE
+) RETURN guests%ROWTYPE
+IS
+  v_occupant guests%ROWTYPE;
+BEGIN
+  SELECT g.*
+  INTO v_occupant
+  FROM bookings b
+  JOIN guests g ON b.guest_id = g.guest_id
+  WHERE b.room_id = p_room_id
+    AND p_date BETWEEN b.start_date AND b.end_date;
+
+  RETURN v_occupant;
+EXCEPTION
+  WHEN NO_DATA_FOUND THEN
+    RETURN NULL;
+  WHEN OTHERS THEN
+    RETURN NULL;
+END;
+
 
 /*
     # Section 7
