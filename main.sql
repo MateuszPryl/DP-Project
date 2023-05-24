@@ -781,6 +781,35 @@ BEGIN
     END IF;
 END;
 
+-- get total lifetime revenue for a specific room
+CREATE OR REPLACE FUNCTION get_room_total_revenue(
+    p_room_id IN rooms.room_id%TYPE
+) RETURN NUMBER
+IS
+    v_total_revenue_now NUMBER := 0;
+    v_total_revenue_history NUMBER := 0;
+    v_total_revenue NUMBER;
+BEGIN
+    -- Calculate the total revenue from the bookings table
+    SELECT COALESCE(SUM(total_price), 0)
+    INTO v_total_revenue_now
+    FROM bookings
+    WHERE room_id = p_room_id;
+
+    -- Calculate the total revenue from the booking_history table
+    SELECT COALESCE(SUM(total_price), 0)
+    INTO v_total_revenue_history
+    FROM bookings_history
+    WHERE room_id = p_room_id;
+
+    v_total_revenue := v_total_revenue_now + v_total_revenue_history;
+
+    RETURN v_total_revenue;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN 0;
+END;
+
 
 /*
     # Section 7
@@ -844,34 +873,7 @@ BEGIN
     END IF;
 END;
 
--- get total lifetime revenue for a specific room
-CREATE OR REPLACE FUNCTION get_room_total_revenue(
-    p_room_id IN rooms.room_id%TYPE
-) RETURN NUMBER
-IS
-    v_total_revenue_now NUMBER := 0;
-    v_total_revenue_history NUMBER := 0;
-    v_total_revenue NUMBER;
-BEGIN
-    -- Calculate the total revenue from the bookings table
-    SELECT COALESCE(SUM(total_price), 0)
-    INTO v_total_revenue_now
-    FROM bookings
-    WHERE room_id = p_room_id;
 
-    -- Calculate the total revenue from the booking_history table
-    SELECT COALESCE(SUM(total_price), 0)
-    INTO v_total_revenue_history
-    FROM bookings_history
-    WHERE room_id = p_room_id;
-
-    v_total_revenue := v_total_revenue_now + v_total_revenue_history;
-
-    RETURN v_total_revenue;
-EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        RETURN 0;
-END;
 
 -- demonstartion
 -- DECLARE
