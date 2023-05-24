@@ -1,10 +1,7 @@
 /*
     # Section 1    
-    DB and tables creation
+    Tables creation
 */
-
--- Create DB
-CREATE DATABASE Hotel;
 
 -- Create tables
 
